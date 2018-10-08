@@ -1,0 +1,86 @@
+# Rust-susceptability-in-wheat
+This script was used to extract GO terms from Brachypodium Bd21-3 annotation file
+
+#! /usr/bin/perl -w
+
+use strict;
+use Getopt::Long();
+
+my $usage = "\nUsage: $0 --in_one <DE output file> --in_two <functional annotation file> --output <output file> --help <help on usage of script>\n\n";
+
+my ($in_one, $in_two, $output, $help);
+
+Getopt::Long::GetOptions('in_one=s' => \$in_one,
+			 'in_two=s' => \$in_two,
+			 'output=s' => \$output,
+			 'h|help' => \$help
+			);
+
+# Open first file (DE file) and store the information
+open (my $in_one_fh, '<', $in_one) or die "Can't open $in_one\n\n";
+my $header_1 = <$in_one_fh>;
+chomp $header_1;
+
+my %de;
+my %annot;
+while (my $line = <$in_one_fh>) {
+    chomp $line;
+    my @info = split ("\t", $line);
+    my $gene = $info[0];
+    $de{$gene} = $line;
+    my $values = "NA_NA_NA";
+    $annot{$gene}{'PFAM'} = $values;
+    $annot{$gene}{'GO'} = $values;
+}
+close $in_one_fh;
+
+# Open second file (functional annotation) and match genes
+open (my $in_two_fh, '<', $in_two) or die "Can't open $in_two\n\n";
+my $header_2 = <$in_two_fh>;
+
+while (my $line2 = <$in_two_fh>) {
+    chomp $line2;
+    my ($gene2, $id, $idtype, $annotation) = split ("\t", $line2);
+    if ($idtype eq "PFAM") {
+	my $value = $id . '_' . $idtype . '_' . $annotation;
+	my $old_value = $annot{$gene2}{'PFAM'};
+	if ($old_value !~ /^NA_/) {
+	    my $new_value = $old_value . '_' . $value;
+	    $annot{$gene2}{'PFAM'} = $new_value;
+	}
+	else {
+	    $annot{$gene2}{'PFAM'} = $value;
+	}
+    }
+    if ($idtype eq "GO") {
+	my $value = $id . '_' . $idtype . '_' . $annotation;
+	my $old_value = $annot{$gene2}{'GO'};
+	if ($old_value !~ /^NA_/) {
+	    my $new_value = $old_value . '_' . $value;
+	    $annot{$gene2}{'GO'} = $new_value;
+	}
+	else {
+	    $annot{$gene2}{'GO'} = $value;
+	}
+    }
+}
+close $in_two_fh;
+
+# Open output file and print out de and annotation together
+open (my $output_fh, '>', $output) or die "Can't open $output\n\n";
+print $output_fh "$header_1\tpfam_id\tdatabase_type\tpfam_annotation\tgo_id\tdatabase_type\tgo_annotation\n";
+
+foreach my $key (keys %de) {
+    my $line = $de{$key};
+    my $pfam = $annot{$key}{'PFAM'};
+    my $go = $annot{$key}{'GO'};
+    my @allpfam = split ("_", $pfam);
+    my $pfam_tab = join ("\t", @allpfam);
+    my @allgo = split ("_", $go);
+    my $go_tab = join ("\t", @allgo);
+
+    print $output_fh "$line\t$pfam_tab\t$go_tab\n";
+}
+close $output_fh;
+
+exit;
