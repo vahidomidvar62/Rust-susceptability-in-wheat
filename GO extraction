@@ -1,0 +1,77 @@
+# Rust-susceptability-in-wheat
+#! /usr/bin/perl -w
+
+# pull_out_functional_annotation_wheat.pl
+
+# This script will take a DE output file and pull out the function of gene from an annotation file
+# Orginally written for Wheat (Vahid)
+
+# Cory Hirsch
+# April 24, 2017
+
+use strict;
+use Getopt::Long();
+
+my $usage = "\nUsage: $0 --in_one <DE output file> --in_two <functional annotation file> --output <output file> --help <help on usage of script>\n\n";
+
+my ($in_one, $in_two, $output, $help);
+
+Getopt::Long::GetOptions('in_one=s' => \$in_one,
+			 'in_two=s' => \$in_two,
+			 'output=s' => \$output,
+			 'h|help' => \$help
+			);
+
+# Open second file (functional annotation) and match genes
+open (my $in_two_fh, '<', $in_two) or die "Can't open $in_two\n\n";
+my $header_2 = <$in_two_fh>;
+
+my %annot;
+while (my $line = <$in_two_fh>) {
+    chomp $line;
+    my @info = split ("\t", $line);
+    my $gene = $info[1];
+    my $rep = $info[3];
+    if ($rep eq "True") {
+	$annot{$gene} = $line;
+    }
+}
+close $in_two_fh;
+
+# Open first file (DE file) and print out corresponding annotation information
+open (my $in_one_fh, '<', $in_one) or die "Can't open $in_one\n\n";
+my $header_1 = <$in_one_fh>;
+chomp $header_1;
+
+# Open output file and print out de and annotation together
+open (my $output_fh, '>', $output) or die "Can't open $output\n\n";
+print $output_fh "$header_1\t#4.Representative\t#9.AHRD_description\t#11.PFAM_ID\t#12.Interproscan_family\t#13.Interproscan_domain\t#15.Interproscan_GO_term\n";
+
+while (my $line = <$in_one_fh>) {
+    chomp $line;
+    my @info = split ("\t", $line);
+    my $gene = $info[0];
+
+    print $output_fh "$line";
+    
+    if (exists $annot{$gene}) {
+	my $annotation_line = $annot{$gene};
+	my @annot_line = split ("\t", $annotation_line);
+	
+       	my $info4 = $annot_line[3];
+	my $info9 = $annot_line[8];
+	my $info11 = $annot_line[10];
+	my $info12 = $annot_line[11];
+	my $info13 = $annot_line[12];
+	my $info15 = $annot_line[14];
+
+	print $output_fh "\t$info4\t$info9\t$info11\t$info12\t$info13\t$info15\n";
+    }
+    else {
+	print $output_fh "\n";
+    }
+}
+close $in_one_fh;
+close $output_fh;
+
+exit;
