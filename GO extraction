@@ -1,14 +1,5 @@
 # Rust-susceptability-in-wheat
-#! /usr/bin/perl -w
-
-# pull_out_functional_annotation_wheat.pl
-
-# This script will take a DE output file and pull out the function of gene from an annotation file
-# Orginally written for Wheat (Vahid)
-
-# Cory Hirsch
-# April 24, 2017
-
+This script is used to extract GO term from wheat anootation file
 use strict;
 use Getopt::Long();
 
