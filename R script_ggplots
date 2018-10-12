@@ -1,0 +1,31 @@
+This script was used to construct graphs in Figure 5.
+
+x <- read.csv("filename",check.names = FALSE)
+names <- x[,1]
+xm <- melt(x)
+
+
+install.packages("plotly")
+library(plotly)
+packageVersion('plotly')
+library(reshape2)
+
+library(ggplot2)
+
+
+p <- ggplot(data=xm, aes(x=Strain, y=value, fill=supp)) 
+p + geom_jitter(width = 0.09, size = 7, show.legend = FALSE, aes(colour = supp, shape = supp))
+
+
+plot <- p + geom_jitter(width = 0.18, size = 7, show.legend = FALSE, aes(colour = supp, shape = supp))
+
+pdf("plot.pdf")
+plot
+dev.off()
+
+png("plot.png", height=770, width=650)
+plot
+dev.off()
+
+
+
